@@ -1,18 +1,28 @@
-import sqlite3
+from pymysql import connections
 from flask import Flask, render_template, request, url_for, flash, redirect 
 from werkzeug.exceptions import abort 
 
 
-def get_db_connection():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn 
+#def get_db_connection():
+#    conn = sqlite3.connect('database.db')
+#    conn.row_factory = sqlite3.Row
+#    return conn 
+
+db_conn = connections.Connection(
+    host = 'blog-db.ci0pe1i0qrdh.ap-southeast-1.rds.amazonaws.com',
+    port = 3306,
+    user='cam',
+    password='cammac1914B',
+    db='blog_data'
+)
+
 
 def get_post(post_id):
-    conn = get_db_connection()
-    post = conn.execute('SELECT * FROM posts WHERE id = ?', 
-                        (post_id,)).fetchone()
-
+    conn = db_conn.cursor()
+    conn.execute('SELECT * FROM posts WHERE id = %s', 
+                        (post_id,))
+    post = conn.fetchone()
+    print('will this help',post)
     conn.close()
     if post is None:
         abort(404)
@@ -28,8 +38,9 @@ app.config['SECRET_KEY']='averybigprimenumber'
 
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    posts = conn.execute('SELECT * FROM posts').fetchall()
+    conn = db_conn.cursor()
+    conn.execute('SELECT * FROM posts')
+    posts = conn.fetchall()
     conn.close()
     return render_template('index.html', posts=posts)
 
@@ -48,8 +59,8 @@ def create():
         if not title:
             flash('title is required peasant')
         else:
-            conn=get_db_connection()
-            conn.execute('INSERT INTO posts (title, content) VALUES (?, ?)', (title, content))
+            conn=db_conn.cursor()
+            conn.execute('INSERT INTO posts (title, content) VALUES (%s, %s)', (title, content))
             conn.commit()
             conn.close()
             return redirect(url_for('index'))
@@ -68,8 +79,8 @@ def edit(post_id):
         if not title:
             flash('title is required drongo')
         else:
-            conn=get_db_connection()
-            conn.execute('UPDATE posts SET title = ?, content = ? WHERE id = ?',
+            conn=db_conn.cursor()
+            conn.execute('UPDATE posts SET title = %s, content = %s WHERE id = %s',
             (title, content, post_id))
             conn.commit()
             conn.close()
@@ -80,8 +91,8 @@ def edit(post_id):
 @app.route('/<int:id>/delete', methods=('POST',))
 def delete(id):
     post = get_post(id)
-    conn = get_db_connection()
-    conn.execute('DELETE FROM posts WHERE id = ?', (id,))
+    conn = db_conn.cursor()
+    conn.execute('DELETE FROM posts WHERE id = %s', (id,))
     conn.commit()
     conn.close()
     flash('"{}" was successfully deleted!'.format(post['title']))
@@ -90,6 +101,6 @@ def delete(id):
 
 
 
-#if __name__ == '__main__':
-#   app.run(host='0.0.0.0', port=80, debug=True)
+if __name__ == '__main__':
+   app.run(host='0.0.0.0', port=80, debug=True)
 
