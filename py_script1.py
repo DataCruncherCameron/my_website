@@ -8,6 +8,8 @@ from werkzeug.exceptions import abort
 #    conn.row_factory = sqlite3.Row
 #    return conn 
 
+headers=('id','created','title','content')
+
 db_conn = connections.Connection(
     host = 'blog-db.ci0pe1i0qrdh.ap-southeast-1.rds.amazonaws.com',
     port = 3306,
@@ -21,7 +23,7 @@ def get_post(post_id):
     conn = db_conn.cursor()
     conn.execute('SELECT * FROM posts WHERE id = %s', 
                         (post_id,))
-    post = conn.fetchone()
+    post = dict(zip(headers,conn.fetchone()))
     print('will this help',post)
     conn.close()
     if post is None:
@@ -42,7 +44,11 @@ def index():
     conn.execute('SELECT * FROM posts')
     posts = conn.fetchall()
     conn.close()
-    return render_template('index.html', posts=posts)
+    table_data=list()
+
+    for i in list(posts):
+        table_data.append(dict(zip(headers,i)))
+    return render_template('index.html', posts=table_data)
 
     
 @app.route('/<int:post_id>')
@@ -61,7 +67,7 @@ def create():
         else:
             conn=db_conn.cursor()
             conn.execute('INSERT INTO posts (title, content) VALUES (%s, %s)', (title, content))
-            conn.commit()
+            db_conn.commit()
             conn.close()
             return redirect(url_for('index'))
     return render_template('create.html')
@@ -82,7 +88,7 @@ def edit(post_id):
             conn=db_conn.cursor()
             conn.execute('UPDATE posts SET title = %s, content = %s WHERE id = %s',
             (title, content, post_id))
-            conn.commit()
+            db_conn.commit()
             conn.close()
             return redirect(url_for('index'))
     return render_template('edit.html', post=post)
@@ -93,7 +99,7 @@ def delete(id):
     post = get_post(id)
     conn = db_conn.cursor()
     conn.execute('DELETE FROM posts WHERE id = %s', (id,))
-    conn.commit()
+    db_conn.commit()
     conn.close()
     flash('"{}" was successfully deleted!'.format(post['title']))
     return redirect(url_for('index'))

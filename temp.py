@@ -9,10 +9,15 @@ db_conn = pymysql.connections.Connection(
     db='blog_data'
 )
 
+headers=('id','created','title','content')
 
 conn = db_conn.cursor()
-conn.execute('SELECT * FROM posts WHERE id = %s', 
-                (1,))
-post = conn.fetchone()
-print('will this help',type(post))
+conn.execute('SELECT * FROM posts')
+posts = conn.fetchall()
 conn.close()
+
+table_data=list()
+
+for i in list(posts):
+    table_data.append(dict(zip(headers,i)))
+print(table_data)
