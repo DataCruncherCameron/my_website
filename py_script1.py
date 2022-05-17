@@ -1,19 +1,23 @@
-from pymysql import connections
+from flask_mysqldb import MySQL
 from flask import Flask, render_template, request, url_for, flash, redirect 
 from werkzeug.exceptions import abort
+
+
+app = Flask(__name__)
+
+# App configuration
+app.config['SECRET_KEY']='averybigprimenumber'
+app.config['MYSQL_HOST']='blog-mysql-database.mysql.database.azure.com'
+app.config['MYSQL_USER']='cam'
+app.config['MYSQL_PASSWORD']='fearnothing1914B'
+app.config['MYSQL_DB']='db'
 
 
 
 headers=('id','created','title','content')
 
-db_conn = connections.Connection(
-    host = 'blog-mysql-database.mysql.database.azure.com',
-    port = 3306,
-    user= 'cam',
-    password= 'fearnothing1918B',
-    db= 'db'
-)
 
+db_conn=MySQL(app)
 
 def get_post(post_id):
     conn = db_conn.cursor()
@@ -27,9 +31,6 @@ def get_post(post_id):
     return post 
 
 
-
-app = Flask(__name__)
-app.config['SECRET_KEY']='averybigprimenumber'
 
 
 
